@@ -30,6 +30,7 @@ function elapsed(job: Job): string {
 	return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
+const RAIL = "┃";
 const LABEL_WIDTH = 8;
 
 function colour(state: Job["state"]): ThemeColor {
@@ -152,29 +153,41 @@ export class DownloadsDashboard extends CustomEditor {
 			{ label: "failed", count: jobs.filter((job) => job.state === "error").length },
 		].filter((item) => item.count > 0).map((item) => `${item.count} ${item.label}`);
 		const summary = counts.length > 0 ? counts.join(" · ") : "no downloads";
-		const lines = [this.uiTheme.fg("muted", `Downloads · ${summary}`), ""];
-		const nameWidth = Math.max(10, Math.min(34, width - 34));
+
+		// Every line hangs off a left rail so the dashboard reads as its own pane,
+		// the same way the prompt editor is framed. The rail thickens for the
+		// selected row so the selection is visible without another marker column.
+		const body: Array<{ text: string; active: boolean }> = [];
+		const inner = Math.max(10, width - RAIL.length);
+		const nameWidth = Math.max(10, Math.min(32, inner - 33));
+		body.push({ text: ` ${this.uiTheme.fg("muted", `Downloads · ${summary}`)}`, active: false });
+		body.push({ text: "", active: false });
 
 		for (const job of jobs) {
 			const isSelected = job.handle === this.selectedHandle;
-			const marker = isSelected ? this.uiTheme.fg("accent", "▸") : " ";
 			const glyph = this.uiTheme.fg(colour(job.state), stateGlyph(job.state));
 			const name = pad(jobName(job), nameWidth);
 			const live = job.state === "active" || job.state === "paused" || job.state === "complete";
 			const tail = live
 				? `${pad(`${percent(job.completedLength, job.totalLength)}%`, 4)} ${this.uiTheme.fg("dim", progressBar(job.completedLength, job.totalLength, 8))}  ${this.uiTheme.fg("muted", job.state === "active" ? `${rate(job.speed) || "starting"} · ${bytes(job.completedLength)}` : bytes(job.totalLength || job.completedLength))}`
 				: `${this.uiTheme.fg(colour(job.state), stateLabel(job.state))}${job.state === "complete" || job.state === "error" ? this.uiTheme.fg("muted", ` · ${bytes(job.totalLength || job.completedLength)}`) : ""}`;
-			lines.push(`  ${marker} ${glyph} ${isSelected ? this.uiTheme.fg("text", name) : name}  ${tail}`);
-			if (isSelected && this.detailsOpen) lines.push(...this.details(job, width));
+			body.push({ text: ` ${glyph} ${isSelected ? this.uiTheme.fg("text", name) : name}  ${tail}`, active: isSelected });
+			if (isSelected && this.detailsOpen) {
+				for (const line of this.details(job, inner)) body.push({ text: line, active: true });
+			}
 		}
-		if (jobs.length === 0) lines.push(this.uiTheme.fg("dim", "  Nothing queued yet. Ask the agent to download something."));
+		if (jobs.length === 0) body.push({ text: this.uiTheme.fg("dim", " Nothing queued yet. Ask the agent to download something."), active: false });
 
-		lines.push("");
+		body.push({ text: "", active: false });
 		if (this.pendingRemove) {
-			lines.push(this.uiTheme.fg("warning", `  Press d again to remove ${this.pendingRemove}; the file stays on disk.`));
+			body.push({ text: this.uiTheme.fg("warning", ` Press d again to remove ${this.pendingRemove}; the file stays on disk.`), active: false });
 		}
-		lines.push(this.uiTheme.fg("dim", "  ↑↓ move · ⏎ details · p pause/resume · R retry · d remove · esc close"));
-		return lines.map((line) => truncateToWidth(line, width));
+		body.push({ text: this.uiTheme.fg("dim", " ↑↓ move · ⏎ details · p pause/resume · R retry · d remove · esc close"), active: false });
+
+		return body.map(({ text, active }) => {
+			const rail = active ? this.uiTheme.fg("accent", RAIL) : this.uiTheme.fg("border", RAIL);
+			return truncateToWidth(`${rail}${text}`, width);
+		});
 	}
 
 	override invalidate(): void {
