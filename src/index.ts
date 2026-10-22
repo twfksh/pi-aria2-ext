@@ -1,8 +1,8 @@
 /**
- * pi-aria2 — fast, resumable downloads for Pi.
+ * pi-aria2-ext — fast, resumable downloads for Pi.
  *
  * One private aria2 daemon per session, loopback-only and secret-authenticated.
- * The model gets short `dl-*` handles; the user gets a live widget, a `/downloads`
+ * The model gets short `dl-*` handles; the user gets a live widget, a downloads
  * dashboard, and `/download` for quick adds.
  */
 
@@ -99,7 +99,7 @@ function detailsFor(
 ): DownloadDetails {
 	const summary = extra.summary ?? summaryFor(action, snapshot, jobs);
 	return {
-		_type: "pi-aria2",
+		_type: "pi-aria2-ext",
 		action,
 		ok,
 		summary,
@@ -119,7 +119,7 @@ function failureDetails(
 	snapshot: ReturnType<DownloadManager["snapshot"]>,
 ): DownloadDetails {
 	return {
-		_type: "pi-aria2",
+		_type: "pi-aria2-ext",
 		action,
 		ok: false,
 		summary: message,

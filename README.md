@@ -1,8 +1,8 @@
-# pi-aria2
+# pi-aria2-ext
 
 Lightweight, resumable downloads for [Pi](https://github.com/earendil-works/pi), powered by a private [aria2](https://aria2.github.io/) daemon.
 
-It gives the agent a compact `download` tool and gives you a live progress widget, an interactive `/downloads` dashboard, and a `/download` shortcut. No runtime dependencies beyond Pi itself and the `aria2c` binary.
+It gives the agent a compact `download` tool and gives you a live progress widget, an interactive downloads dashboard, and a `/download` shortcut. No runtime dependencies beyond Pi itself and the `aria2c` binary.
 
 ```
 ↓ Downloads  3.4 MiB/s · 2 active · 1 paused
@@ -18,7 +18,7 @@ It gives the agent a compact `download` tool and gives you a live progress widge
 - **Never overwrites, never deletes.** `rm` and `purge` only change the queue; partial and finished files stay on disk.
 - **Survives restarts.** Jobs are persisted per working directory and restored *paused*, so a restart never starts network traffic you did not ask for.
 - **Zero runtime dependencies.** The RPC client is a small `fetch`-based JSON-RPC implementation; no WebSocket library, no Pix packages.
-- **Better UX.** Progress bars, ETA, a full-screen keyboard dashboard, completion notifications, `wait`, `retry`, `info`, and `stats`.
+- **Better UX.** Progress bars, ETA, a full-screen downloads dashboard, completion notifications, `wait`, `retry`, `info`, and `stats`.
 
 ## Requirements
 
@@ -46,9 +46,9 @@ winget install aria2.aria2
 From a local checkout:
 
 ```bash
-cd pi-aria2
+cd pi-aria2-ext
 bun install
-pi install /absolute/path/to/pi-aria2
+pi install /absolute/path/to/pi-aria2-ext
 ```
 
 Or load it for one run:
@@ -57,7 +57,7 @@ Or load it for one run:
 pi -e ./src/index.ts
 ```
 
-Once published, `pi install npm:pi-aria2` works the same way.
+Once published, `pi install npm:pi-aria2-ext` works the same way.
 
 ## Quick start
 

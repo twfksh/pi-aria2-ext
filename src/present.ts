@@ -37,7 +37,7 @@ export interface JobView {
 }
 
 export interface DownloadDetails {
-	_type: "pi-aria2";
+	_type: "pi-aria2-ext";
 	action: string;
 	ok: boolean;
 	summary: string;

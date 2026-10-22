@@ -110,7 +110,7 @@ describe("extension factory", () => {
 		expect(callLines).not.toContain("token=secret");
 
 		const details: DownloadDetails = {
-			_type: "pi-aria2",
+			_type: "pi-aria2-ext",
 			action: "add",
 			ok: true,
 			summary: "queued 1 download",

@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "pi-aria2",
+      "name": "pi-aria2-ext",
       "devDependencies": {
         "@earendil-works/pi-coding-agent": "^1.4.0",
         "@earendil-works/pi-tui": "^1.4.0",

@@ -1,5 +1,5 @@
 {
-  "name": "pi-aria2",
+  "name": "pi-aria2-ext",
   "version": "0.1.0",
   "description": "Lightweight, resumable downloads for Pi via a private aria2 daemon",
   "type": "module",
