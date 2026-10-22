@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD033 -- tables are HTML so they span the full width -->
+
 # pi-aria2-ext
 
 Lightweight, resumable downloads for [Pi](https://github.com/earendil-works/pi), powered by a private [aria2](https://aria2.github.io/) daemon.
@@ -82,18 +84,67 @@ download({ action: "wait", handle: "dl-brisk-otter-42" });
 
 ## The `download` tool
 
-| Action   | Input                                          | Result                                                   |
-| -------- | ---------------------------------------------- | -------------------------------------------------------- |
-| `add`    | `url`, `dir`, `out`, `connections`, `maxSpeed` | Queues one download per URL, one `dl-*` handle each      |
-| `list`   | optional `filter`                              | Grouped progress rows with handles                       |
-| `info`   | `handle`                                       | File path, URL, size, speed, ETA, error                  |
-| `pause`  | `handle` (one, many, a gid, or `"all"`)        | Pauses live downloads                                    |
-| `resume` | same as `pause`                                | Resumes paused downloads                                 |
-| `rm`     | same as `pause`                                | Removes from the queue. **Files are kept.**              |
-| `retry`  | `handle` or `"all"`                            | Re-adds failed downloads                                 |
-| `purge`  | none                                           | Clears finished/failed entries. **Files are kept.**      |
-| `wait`   | optional `handle`, `timeoutSec`                | Sits in the current turn until they finish               |
-| `stats`  | none                                           | Daemon version, speed, counts, directories               |
+<table width="100%">
+  <thead>
+    <tr>
+      <th align="left">Action</th>
+      <th align="left">Input</th>
+      <th align="left">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>add</code></td>
+      <td><code>url</code>, <code>dir</code>, <code>out</code>, <code>connections</code>, <code>maxSpeed</code></td>
+      <td>Queues one download per URL, one <code>dl-*</code> handle each</td>
+    </tr>
+    <tr>
+      <td><code>list</code></td>
+      <td>optional <code>filter</code></td>
+      <td>Grouped progress rows with handles</td>
+    </tr>
+    <tr>
+      <td><code>info</code></td>
+      <td><code>handle</code></td>
+      <td>File path, URL, size, speed, ETA, error</td>
+    </tr>
+    <tr>
+      <td><code>pause</code></td>
+      <td><code>handle</code> (one, many, a gid, or <code>"all"</code>)</td>
+      <td>Pauses live downloads</td>
+    </tr>
+    <tr>
+      <td><code>resume</code></td>
+      <td>same as <code>pause</code></td>
+      <td>Resumes paused downloads</td>
+    </tr>
+    <tr>
+      <td><code>rm</code></td>
+      <td>same as <code>pause</code></td>
+      <td>Removes from the queue. <strong>Files are kept.</strong></td>
+    </tr>
+    <tr>
+      <td><code>retry</code></td>
+      <td><code>handle</code> or <code>"all"</code></td>
+      <td>Re-adds failed downloads</td>
+    </tr>
+    <tr>
+      <td><code>purge</code></td>
+      <td>none</td>
+      <td>Clears finished/failed entries. <strong>Files are kept.</strong></td>
+    </tr>
+    <tr>
+      <td><code>wait</code></td>
+      <td>optional <code>handle</code>, <code>timeoutSec</code></td>
+      <td>Sits in the current turn until they finish</td>
+    </tr>
+    <tr>
+      <td><code>stats</code></td>
+      <td>none</td>
+      <td>Daemon version, speed, counts, directories</td>
+    </tr>
+  </tbody>
+</table>
 
 Notes:
 
@@ -129,15 +180,44 @@ Notes:
 ┃ ↑↓ / j k move · ⏎ details · o open · p pause/resume · R retry · d remove · esc close
 ```
 
-| Key                    | Action                                                                                      |
-| ---------------------- | ------------------------------------------------------------------------------------------- |
-| `↑` / `↓`, `j` / `k`   | Select the previous/next download, wrapping at both ends                                    |
-| `Enter`                | Expand or collapse the selected download's details                                          |
-| `o`                    | Open the selected file with the system's default program                                    |
-| `p`                    | Pause or resume the selected download                                                       |
-| `R`                    | Retry the selected failed download                                                          |
-| `d`                    | Remove it (press twice; files stay on disk)                                                 |
-| `Esc` / `Ctrl+Shift+O` | Close and restore the prompt                                                                |
+<table width="100%">
+  <thead>
+    <tr>
+      <th align="left">Key</th>
+      <th align="left">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>↑</code> / <code>↓</code>, <code>j</code> / <code>k</code></td>
+      <td>Select the previous/next download, wrapping at both ends</td>
+    </tr>
+    <tr>
+      <td><code>Enter</code></td>
+      <td>Expand or collapse the selected download's details</td>
+    </tr>
+    <tr>
+      <td><code>o</code></td>
+      <td>Open the selected file with the system's default program</td>
+    </tr>
+    <tr>
+      <td><code>p</code></td>
+      <td>Pause or resume the selected download</td>
+    </tr>
+    <tr>
+      <td><code>R</code></td>
+      <td>Retry the selected failed download</td>
+    </tr>
+    <tr>
+      <td><code>d</code></td>
+      <td>Remove it (press twice; files stay on disk)</td>
+    </tr>
+    <tr>
+      <td><code>Esc</code> / <code>Ctrl+Shift+O</code></td>
+      <td>Close and restore the prompt</td>
+    </tr>
+  </tbody>
+</table>
 
 Movement is one row per physical key press: Kitty-protocol key-release events are ignored, so a press is never applied twice, and holding a key still repeats normally.
 
@@ -187,35 +267,128 @@ Create `~/.pi/agent/pi-aria2/config.json` (all fields optional):
 }
 ```
 
-| Field              | Default | Meaning                                                                               |
-| ------------------ | ------- | ------------------------------------------------------------------------------------- |
-| `defaultDir`       | `"."`   | Directory used when a download names no `dir`; relative to Pi's cwd                   |
-| `split`            | `8`     | Connections per file, 1–16                                                            |
-| `maxConcurrent`    | `5`     | Simultaneous downloads, 1–20                                                          |
-| `maxSpeed`         | unset   | Global cap such as `"10M"`                                                            |
-| `notifyOnComplete` | `true`  | Toast on completion/failure                                                           |
-| `persist`          | `true`  | Save job intent across restarts                                                       |
-| `stopWithPi`       | `true`  | Tie the daemon lifetime to Pi                                                         |
-| `allowedRoot`      | unset   | Confine download directories                                                          |
-| `pollIntervalMs`   | `800`   | Poll interval while active, 250–5000                                                  |
-| `enableDht`        | `false` | Enable BitTorrent DHT (opens a UDP port)                                              |
+<table width="100%">
+  <thead>
+    <tr>
+      <th align="left">Field</th>
+      <th align="left">Default</th>
+      <th align="left">Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>defaultDir</code></td>
+      <td><code>"."</code></td>
+      <td>Directory used when a download names no <code>dir</code>; relative to Pi's cwd</td>
+    </tr>
+    <tr>
+      <td><code>split</code></td>
+      <td><code>8</code></td>
+      <td>Connections per file, 1–16</td>
+    </tr>
+    <tr>
+      <td><code>maxConcurrent</code></td>
+      <td><code>5</code></td>
+      <td>Simultaneous downloads, 1–20</td>
+    </tr>
+    <tr>
+      <td><code>maxSpeed</code></td>
+      <td>unset</td>
+      <td>Global cap such as <code>"10M"</code></td>
+    </tr>
+    <tr>
+      <td><code>notifyOnComplete</code></td>
+      <td><code>true</code></td>
+      <td>Toast on completion/failure</td>
+    </tr>
+    <tr>
+      <td><code>persist</code></td>
+      <td><code>true</code></td>
+      <td>Save job intent across restarts</td>
+    </tr>
+    <tr>
+      <td><code>stopWithPi</code></td>
+      <td><code>true</code></td>
+      <td>Tie the daemon lifetime to Pi</td>
+    </tr>
+    <tr>
+      <td><code>allowedRoot</code></td>
+      <td>unset</td>
+      <td>Confine download directories</td>
+    </tr>
+    <tr>
+      <td><code>pollIntervalMs</code></td>
+      <td><code>800</code></td>
+      <td>Poll interval while active, 250–5000</td>
+    </tr>
+    <tr>
+      <td><code>enableDht</code></td>
+      <td><code>false</code></td>
+      <td>Enable BitTorrent DHT (opens a UDP port)</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Environment variables
 
-| Variable                  | Effect                                                                                   |
-| ------------------------- | ---------------------------------------------------------------------------------------- |
-| `PI_ARIA2_BIN`            | Explicit path to `aria2c`                                                                |
-| `PI_ARIA2_HOME`           | State/runtime directory (default `~/.pi/agent/pi-aria2`)                                 |
-| `PI_ARIA2_DIR`            | Override `defaultDir`                                                                    |
-| `PI_ARIA2_SPLIT`          | Override `split`                                                                         |
-| `PI_ARIA2_MAX_CONCURRENT` | Override `maxConcurrent`                                                                 |
-| `PI_ARIA2_MAX_SPEED`      | Override `maxSpeed`                                                                      |
-| `PI_ARIA2_NOTIFY`         | `0` / `1`                                                                                |
-| `PI_ARIA2_NO_PERSIST`     | `1` disables persistence                                                                 |
-| `PI_ARIA2_KEEP_DAEMON`    | `1` lets the daemon outlive Pi (not recommended)                                         |
-| `PI_ARIA2_ALLOWED_ROOT`   | Override `allowedRoot`                                                                   |
-| `PI_ARIA2_POLL_MS`        | Override `pollIntervalMs`                                                                |
-| `PI_ARIA2_DHT`            | `1` enables DHT                                                                          |
+<table width="100%">
+  <thead>
+    <tr>
+      <th align="left">Variable</th>
+      <th align="left">Effect</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>PI_ARIA2_BIN</code></td>
+      <td>Explicit path to <code>aria2c</code></td>
+    </tr>
+    <tr>
+      <td><code>PI_ARIA2_HOME</code></td>
+      <td>State/runtime directory (default <code>~/.pi/agent/pi-aria2</code>)</td>
+    </tr>
+    <tr>
+      <td><code>PI_ARIA2_DIR</code></td>
+      <td>Override <code>defaultDir</code></td>
+    </tr>
+    <tr>
+      <td><code>PI_ARIA2_SPLIT</code></td>
+      <td>Override <code>split</code></td>
+    </tr>
+    <tr>
+      <td><code>PI_ARIA2_MAX_CONCURRENT</code></td>
+      <td>Override <code>maxConcurrent</code></td>
+    </tr>
+    <tr>
+      <td><code>PI_ARIA2_MAX_SPEED</code></td>
+      <td>Override <code>maxSpeed</code></td>
+    </tr>
+    <tr>
+      <td><code>PI_ARIA2_NOTIFY</code></td>
+      <td><code>0</code> / <code>1</code></td>
+    </tr>
+    <tr>
+      <td><code>PI_ARIA2_NO_PERSIST</code></td>
+      <td><code>1</code> disables persistence</td>
+    </tr>
+    <tr>
+      <td><code>PI_ARIA2_KEEP_DAEMON</code></td>
+      <td><code>1</code> lets the daemon outlive Pi (not recommended)</td>
+    </tr>
+    <tr>
+      <td><code>PI_ARIA2_ALLOWED_ROOT</code></td>
+      <td>Override <code>allowedRoot</code></td>
+    </tr>
+    <tr>
+      <td><code>PI_ARIA2_POLL_MS</code></td>
+      <td>Override <code>pollIntervalMs</code></td>
+    </tr>
+    <tr>
+      <td><code>PI_ARIA2_DHT</code></td>
+      <td><code>1</code> enables DHT</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Cross-session behavior
 
@@ -247,17 +420,52 @@ The test suite starts real `aria2c` processes and a local range-capable HTTP ser
 
 ### Layout
 
-| File               | Responsibility                                                                                  |
-| ------------------ | ----------------------------------------------------------------------------------------------- |
-| `src/index.ts`     | Extension registration, tool surface, commands, renderers                                       |
-| `src/manager.ts`   | Queue state, polling, persistence coordination, chrome updates                                  |
-| `src/daemon.ts`    | Private aria2 process lifecycle and hardened config                                             |
-| `src/rpc.ts`       | `fetch`-based aria2 JSON-RPC client                                                             |
-| `src/store.ts`     | Atomic `0600` job persistence                                                                   |
-| `src/validate.ts`  | URL, path, speed, and handle validation                                                         |
-| `src/present.ts`   | Pure text formatting for tool results                                                           |
-| `src/dashboard.ts` | Focused dashboard that replaces the prompt editor                                               |
-| `src/config.ts`    | `config.json` plus environment overrides                                                        |
+<table width="100%">
+  <thead>
+    <tr>
+      <th align="left">File</th>
+      <th align="left">Responsibility</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>src/index.ts</code></td>
+      <td>Extension registration, tool surface, commands, renderers</td>
+    </tr>
+    <tr>
+      <td><code>src/manager.ts</code></td>
+      <td>Queue state, polling, persistence coordination, chrome updates</td>
+    </tr>
+    <tr>
+      <td><code>src/daemon.ts</code></td>
+      <td>Private aria2 process lifecycle and hardened config</td>
+    </tr>
+    <tr>
+      <td><code>src/rpc.ts</code></td>
+      <td><code>fetch</code>-based aria2 JSON-RPC client</td>
+    </tr>
+    <tr>
+      <td><code>src/store.ts</code></td>
+      <td>Atomic <code>0600</code> job persistence</td>
+    </tr>
+    <tr>
+      <td><code>src/validate.ts</code></td>
+      <td>URL, path, speed, and handle validation</td>
+    </tr>
+    <tr>
+      <td><code>src/present.ts</code></td>
+      <td>Pure text formatting for tool results</td>
+    </tr>
+    <tr>
+      <td><code>src/dashboard.ts</code></td>
+      <td>Focused dashboard that replaces the prompt editor</td>
+    </tr>
+    <tr>
+      <td><code>src/config.ts</code></td>
+      <td><code>config.json</code> plus environment overrides</td>
+    </tr>
+  </tbody>
+</table>
 
 ## License
 
