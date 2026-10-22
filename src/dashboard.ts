@@ -14,12 +14,11 @@ import { bytes, displayUrl, jobName, percent, progressBar, rate, stateGlyph, sta
 import type { DownloadManager } from "./manager.ts";
 import type { Job } from "./types.ts";
 
-const DIVIDER = " │ ";
-const READY_WIDTH = 46;
 
-function pad(value: string, width: number): string {
+function pad(value: string, width: number, alignRight = false): string {
 	const text = truncateToWidth(value, width);
-	return `${text}${" ".repeat(Math.max(0, width - visibleWidth(text)))}`;
+	const fill = " ".repeat(Math.max(0, width - visibleWidth(text)));
+	return alignRight ? `${fill}${text}` : `${text}${fill}`;
 }
 
 function elapsed(job: Job): string {
@@ -46,6 +45,18 @@ function colour(state: Job["state"]): ThemeColor {
 		default:
 			return "muted";
 	}
+}
+
+/** Handle at `index`, or undefined when the queue is empty. */
+function handleAt(jobs: Job[], index: number): string | undefined {
+	return jobs[index]?.handle;
+}
+
+/** Detail text shown after the progress bar. */
+function progressDetail(job: Job): string {
+	if (job.state === "active") return `${rate(job.speed) || "starting"} · ${bytes(job.completedLength)}`;
+	if (job.state === "paused") return `paused · ${bytes(job.completedLength)}`;
+	return bytes(job.totalLength || job.completedLength);
 }
 
 export class DownloadsDashboard extends CustomEditor {
@@ -94,10 +105,12 @@ export class DownloadsDashboard extends CustomEditor {
 		const jobs = this.jobs();
 		const index = jobs.findIndex((job) => job.handle === this.selectedHandle);
 		const selected = jobs[index];
-		if (matchesKey(data, "up") && jobs.length) {
-			this.selectedHandle = jobs[(index <= 0 ? jobs.length : index) - 1]!.handle;
-		} else if (matchesKey(data, "down") && jobs.length) {
-			this.selectedHandle = jobs[(index + 1) % jobs.length]!.handle;
+		const up = matchesKey(data, "up") || data === "k";
+		const down = matchesKey(data, "down") || data === "j";
+		if (up && jobs.length) {
+			this.selectedHandle = handleAt(jobs, (index <= 0 ? jobs.length : index) - 1);
+		} else if (down && jobs.length) {
+			this.selectedHandle = handleAt(jobs, (index + 1) % jobs.length);
 		} else if (matchesKey(data, "enter")) {
 			this.detailsOpen = !this.detailsOpen;
 		} else if (data === "p" && selected) {
@@ -145,49 +158,82 @@ export class DownloadsDashboard extends CustomEditor {
 			this.selectedHandle = jobs[0]?.handle;
 			this.pendingRemove = undefined;
 		}
-		const selected = jobs.find((job) => job.handle === this.selectedHandle);
-		const counts = [
-			{ label: "active", count: jobs.filter((job) => job.state === "active").length },
-			{ label: "queued", count: jobs.filter((job) => ["queued", "waiting", "paused"].includes(job.state)).length },
-			{ label: "done", count: jobs.filter((job) => job.state === "complete").length },
-			{ label: "failed", count: jobs.filter((job) => job.state === "error").length },
-		].filter((item) => item.count > 0).map((item) => `${item.count} ${item.label}`);
-		const summary = counts.length > 0 ? counts.join(" · ") : "no downloads";
+		const tally = { active: 0, queued: 0, done: 0, failed: 0 };
+		for (const job of jobs) {
+			if (job.state === "active") tally.active += 1;
+			else if (job.state === "queued" || job.state === "waiting" || job.state === "paused") tally.queued += 1;
+			else if (job.state === "complete") tally.done += 1;
+			else if (job.state === "error") tally.failed += 1;
+		}
+		const summary =
+			(
+				[
+					["active", tally.active],
+					["queued", tally.queued],
+					["done", tally.done],
+					["failed", tally.failed],
+				] as const
+			)
+				.filter(([, count]) => count > 0)
+				.map(([label, count]) => `${count} ${label}`)
+				.join(" · ") || "no downloads";
 
 		// Every line hangs off a left rail so the dashboard reads as its own pane,
-		// the same way the prompt editor is framed. The rail thickens for the
-		// selected row so the selection is visible without another marker column.
+		// the way the prompt editor is framed.
 		const body: Array<{ text: string; active: boolean }> = [];
 		const inner = Math.max(10, width - RAIL.length);
-		const nameWidth = Math.max(10, Math.min(32, inner - 33));
 		body.push({ text: ` ${this.uiTheme.fg("muted", `Downloads · ${summary}`)}`, active: false });
 		body.push({ text: "", active: false });
+
+		// One column template for every row: glyph, name, then a status area that
+		// starts at a fixed column whether or not the row has progress to draw.
+		const pctWidth = 4;
+		const barWidth = 8;
+		const chrome = 1 + 1 + 1 + 2 + pctWidth + 1 + barWidth + 2; // rail gutter, glyph, name gap, cells
+		const nameColumn = Math.max(8, Math.min(32, inner - chrome - 18));
+		const detailRoom = Math.max(6, inner - chrome - nameColumn);
 
 		for (const job of jobs) {
 			const isSelected = job.handle === this.selectedHandle;
 			const glyph = this.uiTheme.fg(colour(job.state), stateGlyph(job.state));
-			const name = pad(jobName(job), nameWidth);
-			const live = job.state === "active" || job.state === "paused" || job.state === "complete";
-			const tail = live
-				? `${pad(`${percent(job.completedLength, job.totalLength)}%`, 4)} ${this.uiTheme.fg("dim", progressBar(job.completedLength, job.totalLength, 8))}  ${this.uiTheme.fg("muted", job.state === "active" ? `${rate(job.speed) || "starting"} · ${bytes(job.completedLength)}` : bytes(job.totalLength || job.completedLength))}`
-				: `${this.uiTheme.fg(colour(job.state), stateLabel(job.state))}${job.state === "complete" || job.state === "error" ? this.uiTheme.fg("muted", ` · ${bytes(job.totalLength || job.completedLength)}`) : ""}`;
-			body.push({ text: ` ${glyph} ${isSelected ? this.uiTheme.fg("text", name) : name}  ${tail}`, active: isSelected });
+			const rawName = pad(jobName(job), nameColumn);
+			const name = isSelected
+				? this.uiTheme.bold(this.uiTheme.fg("accent", rawName))
+				: this.uiTheme.fg("text", rawName);
+			const status = this.rowStatus(job, pctWidth, barWidth, detailRoom);
+			const text = isSelected ? this.uiTheme.bold(status) : status;
+			body.push({ text: ` ${glyph} ${name}  ${text}`, active: isSelected });
 			if (isSelected && this.detailsOpen) {
 				for (const line of this.details(job, inner)) body.push({ text: line, active: true });
 			}
 		}
-		if (jobs.length === 0) body.push({ text: this.uiTheme.fg("dim", " Nothing queued yet. Ask the agent to download something."), active: false });
+		if (jobs.length === 0) {
+			body.push({ text: this.uiTheme.fg("dim", " Nothing queued yet. Ask the agent to download something."), active: false });
+		}
 
 		body.push({ text: "", active: false });
 		if (this.pendingRemove) {
 			body.push({ text: this.uiTheme.fg("warning", ` Press d again to remove ${this.pendingRemove}; the file stays on disk.`), active: false });
 		}
-		body.push({ text: this.uiTheme.fg("dim", " ↑↓ move · ⏎ details · p pause/resume · R retry · d remove · esc close"), active: false });
+		body.push({ text: this.uiTheme.fg("dim", " ↑↓ / j k move · ⏎ details · p pause/resume · R retry · d remove · esc close"), active: false });
 
 		return body.map(({ text, active }) => {
 			const rail = active ? this.uiTheme.fg("accent", RAIL) : this.uiTheme.fg("border", RAIL);
 			return truncateToWidth(`${rail}${text}`, width);
 		});
+	}
+
+	/** Percent, bar, and detail for rows with progress; a plain status for the rest. */
+	private rowStatus(job: Job, pctWidth: number, barWidth: number, room: number): string {
+		if (job.state === "active" || job.state === "paused" || job.state === "complete") {
+			const pct = pad(`${percent(job.completedLength, job.totalLength)}%`, pctWidth, true);
+			const bar = this.uiTheme.fg("dim", progressBar(job.completedLength, job.totalLength, barWidth));
+			const detail = truncateToWidth(progressDetail(job), room);
+			return `${pct} ${bar}  ${this.uiTheme.fg("muted", detail)}`;
+		}
+		const size = bytes(job.totalLength || job.completedLength);
+		const status = truncateToWidth(`${stateLabel(job.state)} · ${size}`, room + pctWidth + barWidth);
+		return this.uiTheme.fg(colour(job.state), status);
 	}
 
 	override invalidate(): void {

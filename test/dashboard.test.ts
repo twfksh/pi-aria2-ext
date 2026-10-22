@@ -49,8 +49,13 @@ function harness(jobs: Job[] = [job()]) {
 	} as unknown as TUI;
 	// EditorTheme is all CustomEditor needs; the dashboard colours through Theme.
 	const editorTheme = { borderColor: (text: string) => text, selectList: {} } as unknown as EditorTheme;
-	// Colour tokens become markers so tests can see which parts are accented.
-	const theme = { fg: (token: string, text: string) => `<${token}>${text}</${token}>` } as unknown as Theme;
+	// Real SGR escapes, so terminal width maths stays honest while tests can
+	// still tell which token painted a span.
+	const theme = {
+		fg: (token: string, text: string) => `\u001b[${TOKEN_SGR[token] ?? 37}m${text}\u001b[0m`,
+		bold: (text: string) => `\u001b[1m${text}\u001b[0m`,
+		style: (text: string) => text,
+	} as unknown as Theme;
 	const keybindings = { matches: () => false } as unknown as KeybindingsManager;
 	let closed = false;
 
@@ -61,8 +66,19 @@ function harness(jobs: Job[] = [job()]) {
 	return { dashboard, renders: () => renders, isClosed: () => closed };
 }
 
-const strip = (line: string) => line.replace(/\u001b\[[0-9;]*m/g, "").replace(/<\/?[a-z]+>/g, "");
-const accentRail = "<accent>┃";
+const TOKEN_SGR: Record<string, number> = {
+	accent: 35,
+	border: 90,
+	muted: 90,
+	dim: 2,
+	text: 37,
+	success: 32,
+	error: 31,
+	warning: 33,
+};
+const strip = (line: string) => line.replace(/\u001b\[[0-9;]*m/g, "");
+const accentRail = "\u001b[35m┃";
+const boldOpen = "\u001b[1m";
 
 /** The selected row is the first line drawn with the accent rail. */
 function selectedRow(dashboard: DownloadsDashboard): string {
@@ -125,6 +141,53 @@ describe("prompt dashboard", () => {
 		expect(accentRows.length).toBeGreaterThan(1);
 		expect(strip(accentRows[0]!)).toContain("one.iso");
 		expect(strip(accentRows[0]!)).not.toContain("two.bin");
+		dashboard.dispose();
+	});
+
+	test("j and k move the selection like the arrow keys", () => {
+		const jobs = [job({ handle: "dl-a", name: "a.bin" }), job({ handle: "dl-b", name: "b.bin", createdAt: 2 }), job({ handle: "dl-c", name: "c.bin", createdAt: 3 })];
+		const { dashboard } = harness(jobs);
+		dashboard.handleInput("j");
+		expect(selectedRow(dashboard)).toContain("b.bin");
+		dashboard.handleInput("j");
+		expect(selectedRow(dashboard)).toContain("c.bin");
+		dashboard.handleInput("j");
+		expect(selectedRow(dashboard)).toContain("a.bin");
+		dashboard.handleInput("k");
+		expect(selectedRow(dashboard)).toContain("c.bin");
+		dashboard.dispose();
+	});
+
+	test("rows share one column template", () => {
+		const jobs = [
+			job({ handle: "dl-done", name: "opencode-desktop-linux-amd64.deb", state: "complete", completedLength: 100, totalLength: 100 }),
+			job({ handle: "dl-bad", name: "opencode-desktop-linux-amd64.deb", state: "error", completedLength: 0, totalLength: 0, createdAt: 2 }),
+			job({ handle: "dl-live", name: "ubuntu.iso", state: "active", createdAt: 3, completedLength: 25, totalLength: 100 }),
+		];
+		const { dashboard } = harness(jobs);
+		// Rows only: the details block below the selection repeats the file name.
+		const rows = dashboard.render(100).map(strip).filter((line) => /^┃ [✓✗●‖]/.test(line));
+		expect(rows).toHaveLength(3);
+
+		// The percent cell is right-aligned and four wide, so its left edge is
+		// fixed; a row without progress starts its status at that same edge.
+		const cellStart = (line: string) => {
+			const pct = line.indexOf("%");
+			if (pct !== -1) return pct - 3;
+			return line.indexOf("failed");
+		};
+		expect(new Set(rows.map(cellStart)).size).toBe(1);
+
+		const bars = rows.map((line) => line.search(/[█░]/)).filter((index) => index !== -1);
+		expect(new Set(bars).size).toBe(1);
+		dashboard.dispose();
+	});
+
+	test("the selected row is emphasised", () => {
+		const { dashboard } = harness([job(), job({ handle: "dl-two", name: "two.bin", createdAt: 2 })]);
+		const selected = dashboard.render(100).find((line) => line.startsWith(accentRail)) ?? "";
+		expect(strip(selected)).toContain("one.iso");
+		expect(selected).toContain(boldOpen);
 		dashboard.dispose();
 	});
 
