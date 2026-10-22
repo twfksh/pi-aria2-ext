@@ -8,7 +8,6 @@ import { randomInt } from "node:crypto";
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import type { ExtensionContext, ExtensionUIContext } from "@earendil-works/pi-coding-agent";
-import type { TUI } from "@earendil-works/pi-tui";
 import { Aria2MissingError, resolveAria2Binary } from "./binary.ts";
 import { type DaemonHandle, DaemonStartError, startDaemon } from "./daemon.ts";
 import {
@@ -41,9 +40,6 @@ import {
 	resolveDownloadDir,
 	sanitizeOutName,
 } from "./validate.ts";
-import { ProgressWidget, type WidgetData } from "./widget.ts";
-
-const WIDGET_KEY = "pi-aria2:widget";
 const STATUS_KEY = "pi-aria2";
 
 const ADJECTIVES = [
@@ -197,9 +193,6 @@ export class DownloadManager {
 	private ui: ExtensionUIContext | undefined;
 	private hasUI = false;
 	private mode: ExtensionContext["mode"] = "tui";
-	private widgetEnabled = false;
-	private widget: ProgressWidget | undefined;
-	private widgetTui: TUI | undefined;
 
 	private readonly listeners = new Set<SnapshotListener>();
 	private readonly recentDone = new Map<string, number>();
@@ -334,7 +327,6 @@ export class DownloadManager {
 			this.daemonState = "running";
 			this.version = daemon.version;
 			this.lastError = undefined;
-			this.widgetEnabled = true;
 			await this.restoreJobs(daemon);
 			this.emit(true);
 			this.schedulePoll(0);
@@ -899,7 +891,6 @@ export class DownloadManager {
 
 	beginDashboard(): void {
 		this.dashboardRefs += 1;
-		this.widgetEnabled = true;
 		this.schedulePoll(0);
 		void this.refresh(true);
 	}
@@ -917,13 +908,10 @@ export class DownloadManager {
 			this.pollTimer = undefined;
 		}
 		try {
-			this.ui?.setWidget(WIDGET_KEY, undefined);
 			this.ui?.setStatus(STATUS_KEY, undefined);
 		} catch {
 			// UI may already be torn down.
 		}
-		this.widget = undefined;
-		this.widgetTui = undefined;
 		await this.store.flush([...this.jobs.values()]);
 		const daemon = this.daemon;
 		this.daemon = undefined;
@@ -1028,51 +1016,20 @@ export class DownloadManager {
 		this.updateChrome(snapshot);
 	}
 
-	private widgetData(snapshot: Snapshot): WidgetData {
-		return { snapshot, recentDone: this.recentDone, now: Date.now() };
-	}
-
+	/** Keep the footer hint in sync. The dashboard and tool results carry the detail. */
 	private updateChrome(snapshot: Snapshot): void {
 		if (!this.hasUI || !this.ui || this.mode === "print" || this.mode === "json") return;
 		const live = snapshot.jobs.filter((job) => !isTerminal(job.state));
-		const recent = snapshot.jobs.some((job) => this.recentDone.has(job.handle));
-		const active = snapshot.jobs.filter((job) => job.state === "active");
+		const active = live.filter((job) => job.state === "active");
 		const speed = rate(snapshot.global.downloadSpeed);
-
+		const status =
+			active.length > 0
+				? `↓ ${active.length}${speed ? ` · ${speed}` : ""}`
+				: live.length > 0
+					? `‖ ${live.length} paused`
+					: undefined;
 		try {
-			if (!this.widgetEnabled) {
-				if (live.length > 0) this.ui.setStatus(STATUS_KEY, `${live.length} saved · Ctrl+Shift+O`);
-				else this.ui.setStatus(STATUS_KEY, undefined);
-				return;
-			}
-			if (live.length === 0 && !recent) {
-				this.ui.setWidget(WIDGET_KEY, undefined);
-				this.ui.setStatus(STATUS_KEY, undefined);
-				this.widget = undefined;
-				this.widgetTui = undefined;
-				return;
-			}
-			const status =
-				active.length > 0
-					? `↓ ${active.length}${speed ? ` · ${speed}` : ""}`
-					: live.length > 0
-						? `‖ ${live.length} paused`
-						: undefined;
 			this.ui.setStatus(STATUS_KEY, status);
-			if (!this.widget) {
-				this.ui.setWidget(
-					WIDGET_KEY,
-					(tui, theme) => {
-						this.widgetTui = tui;
-						this.widget = new ProgressWidget(this.widgetData(this.snapshot()), theme);
-						return this.widget;
-					},
-					{ placement: "aboveEditor" },
-				);
-			} else {
-				this.widget.update(this.widgetData(snapshot));
-				this.widgetTui?.requestRender();
-			}
 		} catch {
 			// The UI context can be gone during shutdown or a non-interactive turn.
 		}

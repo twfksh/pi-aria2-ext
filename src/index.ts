@@ -2,8 +2,8 @@
  * pi-aria2-ext — fast, resumable downloads for Pi.
  *
  * One private aria2 daemon per session, loopback-only and secret-authenticated.
- * The model gets short `dl-*` handles; the user gets a live widget, a downloads
- * dashboard, and `/download` for quick adds.
+ * The model gets short `dl-*` handles; the user gets a downloads dashboard and
+ * `/download` for quick adds.
  */
 
 import { join } from "node:path";
@@ -177,7 +177,7 @@ export default function registerDownloads(pi: ExtensionAPI): void {
 			"- wait: block until the selected downloads finish. Parameters: handle, timeoutSec (1-3600, default 300). Downloads keep running if the wait times out.",
 			"- stats: daemon and queue summary.",
 			"",
-			"Downloads never overwrite an existing file and resume from partial files. A live progress widget appears while transfers run; the user can press Ctrl+Shift+O for the interactive dashboard.",
+			"Downloads never overwrite an existing file and resume from partial files. Tool results report progress and completion; the user can press Ctrl+Shift+O for the interactive dashboard.",
 		].join("\n"),
 		promptSnippet: "Download files quickly and resumably via aria2, with a managed queue",
 		promptGuidelines: [

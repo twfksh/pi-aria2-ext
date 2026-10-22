@@ -2,7 +2,7 @@
 
 Lightweight, resumable downloads for [Pi](https://github.com/earendil-works/pi), powered by a private [aria2](https://aria2.github.io/) daemon.
 
-It gives the agent a compact `download` tool and gives you a live progress widget, an interactive downloads dashboard, and a `/download` shortcut. No runtime dependencies beyond Pi itself and the `aria2c` binary.
+It gives the agent a compact `download` tool and gives you an interactive downloads dashboard, a compact footer status, and a `/download` shortcut. No runtime dependencies beyond Pi itself and the `aria2c` binary.
 
 ```text
 ↓ Downloads  3.4 MiB/s · 2 active · 1 paused
@@ -107,10 +107,6 @@ Notes:
 - The tool is `sequential`, because all calls share the same queue.
 
 ## Interactive UI
-
-### Progress widget
-
-While transfers are live, a widget above the editor shows handle, status, percentage, a progress bar, size, speed, and ETA. It stays visible briefly after completion, then hides itself. The footer shows a compact `↓ 2 · 3.4 MiB/s` status.
 
 ### Downloads dashboard
 
@@ -257,7 +253,6 @@ The test suite starts real `aria2c` processes and a local range-capable HTTP ser
 | `src/store.ts`     | Atomic `0600` job persistence                                                              |
 | `src/validate.ts`  | URL, path, speed, and handle validation                                                    |
 | `src/present.ts`   | Pure text formatting for tool results                                                      |
-| `src/widget.ts`    | Live progress widget                                                                       |
 | `src/dashboard.ts` | Focused dashboard that replaces the prompt editor                                          |
 | `src/config.ts`    | `config.json` plus environment overrides                                                   |
 
