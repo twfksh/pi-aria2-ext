@@ -82,18 +82,18 @@ download({ action: "wait", handle: "dl-brisk-otter-42" });
 
 ## The `download` tool
 
-| Action   | Input                                          | Result                                              |
-| -------- | ---------------------------------------------- | --------------------------------------------------- |
-| `add`    | `url`, `dir`, `out`, `connections`, `maxSpeed` | Queues one download per URL, one `dl-*` handle each |
-| `list`   | optional `filter`                              | Grouped progress rows with handles                  |
-| `info`   | `handle`                                       | File path, URL, size, speed, ETA, error             |
-| `pause`  | `handle` (one, many, a gid, or `"all"`)        | Pauses live downloads                               |
-| `resume` | same as `pause`                                | Resumes paused downloads                            |
-| `rm`     | same as `pause`                                | Removes from the queue. **Files are kept.**         |
-| `retry`  | `handle` or `"all"`                            | Re-adds failed downloads                            |
-| `purge`  | none                                           | Clears finished/failed entries. **Files are kept.** |
-| `wait`   | optional `handle`, `timeoutSec`                | Sits in the current turn until they finish          |
-| `stats`  | none                                           | Daemon version, speed, counts, directories          |
+| Action   | Input                                          | Result                                                   |
+| -------- | ---------------------------------------------- | -------------------------------------------------------- |
+| `add`    | `url`, `dir`, `out`, `connections`, `maxSpeed` | Queues one download per URL, one `dl-*` handle each      |
+| `list`   | optional `filter`                              | Grouped progress rows with handles                       |
+| `info`   | `handle`                                       | File path, URL, size, speed, ETA, error                  |
+| `pause`  | `handle` (one, many, a gid, or `"all"`)        | Pauses live downloads                                    |
+| `resume` | same as `pause`                                | Resumes paused downloads                                 |
+| `rm`     | same as `pause`                                | Removes from the queue. **Files are kept.**              |
+| `retry`  | `handle` or `"all"`                            | Re-adds failed downloads                                 |
+| `purge`  | none                                           | Clears finished/failed entries. **Files are kept.**      |
+| `wait`   | optional `handle`, `timeoutSec`                | Sits in the current turn until they finish               |
+| `stats`  | none                                           | Daemon version, speed, counts, directories               |
 
 Notes:
 
@@ -129,15 +129,15 @@ Notes:
 ┃ ↑↓ / j k move · ⏎ details · o open · p pause/resume · R retry · d remove · esc close
 ```
 
-| Key                    | Action                                                                                 |
-| ---------------------- | -------------------------------------------------------------------------------------- |
-| `↑` / `↓`, `j` / `k`   | Select the previous/next download, wrapping at both ends                               |
-| `Enter`                | Expand or collapse the selected download's details                                     |
-| `o`                    | Open the selected file with the system's default program                               |
-| `p`                    | Pause or resume the selected download                                                  |
-| `R`                    | Retry the selected failed download                                                     |
-| `d`                    | Remove it (press twice; files stay on disk)                                            |
-| `Esc` / `Ctrl+Shift+O` | Close and restore the prompt                                                           |
+| Key                    | Action                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| `↑` / `↓`, `j` / `k`   | Select the previous/next download, wrapping at both ends                                    |
+| `Enter`                | Expand or collapse the selected download's details                                          |
+| `o`                    | Open the selected file with the system's default program                                    |
+| `p`                    | Pause or resume the selected download                                                       |
+| `R`                    | Retry the selected failed download                                                          |
+| `d`                    | Remove it (press twice; files stay on disk)                                                 |
+| `Esc` / `Ctrl+Shift+O` | Close and restore the prompt                                                                |
 
 Movement is one row per physical key press: Kitty-protocol key-release events are ignored, so a press is never applied twice, and holding a key still repeats normally.
 
@@ -187,35 +187,35 @@ Create `~/.pi/agent/pi-aria2/config.json` (all fields optional):
 }
 ```
 
-| Field              | Default | Meaning                                                                          |
-| ------------------ | ------- | -------------------------------------------------------------------------------- |
-| `defaultDir`       | `"."`   | Directory used when a download names no `dir`; relative to Pi's cwd              |
-| `split`            | `8`     | Connections per file, 1–16                                                       |
-| `maxConcurrent`    | `5`     | Simultaneous downloads, 1–20                                                     |
-| `maxSpeed`         | unset   | Global cap such as `"10M"`                                                       |
-| `notifyOnComplete` | `true`  | Toast on completion/failure                                                      |
-| `persist`          | `true`  | Save job intent across restarts                                                  |
-| `stopWithPi`       | `true`  | Tie the daemon lifetime to Pi                                                    |
-| `allowedRoot`      | unset   | Confine download directories                                                     |
-| `pollIntervalMs`   | `800`   | Poll interval while active, 250–5000                                             |
-| `enableDht`        | `false` | Enable BitTorrent DHT (opens a UDP port)                                         |
+| Field              | Default | Meaning                                                                               |
+| ------------------ | ------- | ------------------------------------------------------------------------------------- |
+| `defaultDir`       | `"."`   | Directory used when a download names no `dir`; relative to Pi's cwd                   |
+| `split`            | `8`     | Connections per file, 1–16                                                            |
+| `maxConcurrent`    | `5`     | Simultaneous downloads, 1–20                                                          |
+| `maxSpeed`         | unset   | Global cap such as `"10M"`                                                            |
+| `notifyOnComplete` | `true`  | Toast on completion/failure                                                           |
+| `persist`          | `true`  | Save job intent across restarts                                                       |
+| `stopWithPi`       | `true`  | Tie the daemon lifetime to Pi                                                         |
+| `allowedRoot`      | unset   | Confine download directories                                                          |
+| `pollIntervalMs`   | `800`   | Poll interval while active, 250–5000                                                  |
+| `enableDht`        | `false` | Enable BitTorrent DHT (opens a UDP port)                                              |
 
 ### Environment variables
 
-| Variable                  | Effect                                                                              |
-| ------------------------- | ----------------------------------------------------------------------------------- |
-| `PI_ARIA2_BIN`            | Explicit path to `aria2c`                                                           |
-| `PI_ARIA2_HOME`           | State/runtime directory (default `~/.pi/agent/pi-aria2`)                            |
-| `PI_ARIA2_DIR`            | Override `defaultDir`                                                               |
-| `PI_ARIA2_SPLIT`          | Override `split`                                                                    |
-| `PI_ARIA2_MAX_CONCURRENT` | Override `maxConcurrent`                                                            |
-| `PI_ARIA2_MAX_SPEED`      | Override `maxSpeed`                                                                 |
-| `PI_ARIA2_NOTIFY`         | `0` / `1`                                                                           |
-| `PI_ARIA2_NO_PERSIST`     | `1` disables persistence                                                            |
-| `PI_ARIA2_KEEP_DAEMON`    | `1` lets the daemon outlive Pi (not recommended)                                    |
-| `PI_ARIA2_ALLOWED_ROOT`   | Override `allowedRoot`                                                              |
-| `PI_ARIA2_POLL_MS`        | Override `pollIntervalMs`                                                           |
-| `PI_ARIA2_DHT`            | `1` enables DHT                                                                     |
+| Variable                  | Effect                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| `PI_ARIA2_BIN`            | Explicit path to `aria2c`                                                                |
+| `PI_ARIA2_HOME`           | State/runtime directory (default `~/.pi/agent/pi-aria2`)                                 |
+| `PI_ARIA2_DIR`            | Override `defaultDir`                                                                    |
+| `PI_ARIA2_SPLIT`          | Override `split`                                                                         |
+| `PI_ARIA2_MAX_CONCURRENT` | Override `maxConcurrent`                                                                 |
+| `PI_ARIA2_MAX_SPEED`      | Override `maxSpeed`                                                                      |
+| `PI_ARIA2_NOTIFY`         | `0` / `1`                                                                                |
+| `PI_ARIA2_NO_PERSIST`     | `1` disables persistence                                                                 |
+| `PI_ARIA2_KEEP_DAEMON`    | `1` lets the daemon outlive Pi (not recommended)                                         |
+| `PI_ARIA2_ALLOWED_ROOT`   | Override `allowedRoot`                                                                   |
+| `PI_ARIA2_POLL_MS`        | Override `pollIntervalMs`                                                                |
+| `PI_ARIA2_DHT`            | `1` enables DHT                                                                          |
 
 ## Cross-session behavior
 
@@ -247,17 +247,17 @@ The test suite starts real `aria2c` processes and a local range-capable HTTP ser
 
 ### Layout
 
-| File               | Responsibility                                                                             |
-| ------------------ | ------------------------------------------------------------------------------------------ |
-| `src/index.ts`     | Extension registration, tool surface, commands, renderers                                  |
-| `src/manager.ts`   | Queue state, polling, persistence coordination, chrome updates                             |
-| `src/daemon.ts`    | Private aria2 process lifecycle and hardened config                                        |
-| `src/rpc.ts`       | `fetch`-based aria2 JSON-RPC client                                                        |
-| `src/store.ts`     | Atomic `0600` job persistence                                                              |
-| `src/validate.ts`  | URL, path, speed, and handle validation                                                    |
-| `src/present.ts`   | Pure text formatting for tool results                                                      |
-| `src/dashboard.ts` | Focused dashboard that replaces the prompt editor                                          |
-| `src/config.ts`    | `config.json` plus environment overrides                                                   |
+| File               | Responsibility                                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| `src/index.ts`     | Extension registration, tool surface, commands, renderers                                       |
+| `src/manager.ts`   | Queue state, polling, persistence coordination, chrome updates                                  |
+| `src/daemon.ts`    | Private aria2 process lifecycle and hardened config                                             |
+| `src/rpc.ts`       | `fetch`-based aria2 JSON-RPC client                                                             |
+| `src/store.ts`     | Atomic `0600` job persistence                                                                   |
+| `src/validate.ts`  | URL, path, speed, and handle validation                                                         |
+| `src/present.ts`   | Pure text formatting for tool results                                                           |
+| `src/dashboard.ts` | Focused dashboard that replaces the prompt editor                                               |
+| `src/config.ts`    | `config.json` plus environment overrides                                                        |
 
 ## License
 
