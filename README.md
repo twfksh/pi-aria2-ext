@@ -14,6 +14,7 @@ It gives the agent a compact `download` tool and gives you an interactive downlo
 
 - **One private daemon per session.** Loopback-only RPC on a random port with a 256-bit secret.
 - **The secret is not in `ps`.** It lives in a `0600` config file inside a `0700` directory, not in argv.
+- **Out of the agent's way.** `add` hands the URLs to the daemon and returns; the agent turn ends and downloads keep streaming. Polling is a timer, not a blocking call.
 - **No orphans.** `--stop-with-process` makes aria2 exit if Pi crashes.
 - **Never overwrites, never deletes.** `rm` and `purge` only change the queue; partial and finished files stay on disk.
 - **Survives restarts.** Jobs are persisted per working directory and restored *paused*, so a restart never starts network traffic you did not ask for.
@@ -91,7 +92,7 @@ download({ action: "wait", handle: "dl-brisk-otter-42" });
 | `rm`     | same as `pause`                                | Removes from the queue. **Files are kept.**         |
 | `retry`  | `handle` or `"all"`                            | Re-adds failed downloads                            |
 | `purge`  | none                                           | Clears finished/failed entries. **Files are kept.** |
-| `wait`   | optional `handle`, `timeoutSec`                | Blocks until they finish, then lets go              |
+| `wait`   | optional `handle`, `timeoutSec`                | Sits in the current turn until they finish          |
 | `stats`  | none                                           | Daemon version, speed, counts, directories          |
 
 Notes:
@@ -101,6 +102,7 @@ Notes:
 - `connections` is clamped to 1–16. `maxSpeed` accepts `"5M"`, `"500K"`, or bytes/second.
 - `list` filters: `all`, `active`, `waiting`, `paused`, `done`, `failed`.
 - `wait` keeps the downloads running after `timeoutSec` (1–3600, default 300) expires.
+- Prefer `add` over `add` + `wait`: transfers run in a separate aria2 process, so they keep going after the turn ends and the next prompt starts a fresh turn instead of steering into a busy one.
 - `handle` accepts the short `dl-*` handle, an aria2 gid, `"all"`, or an array.
 - `wait` on a paused download returns immediately with a clear "nothing to wait for" message instead of blocking until the timeout.
 - `wait` on an already-finished download reports it as already finished.
