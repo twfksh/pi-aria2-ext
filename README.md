@@ -110,7 +110,7 @@ Notes:
 
 ### Downloads dashboard
 
-`Ctrl+Shift+O` replaces the prompt editor with a focused dashboard. Every line hangs off a left rail, the way the prompt itself is framed, and the selected row is drawn in bold with an accent rail and accent name so the selection is unmistakable. Rows share one column template — glyph, name, percent, bar, detail — so a download without progress blanks those cells instead of shifting its text left. Rows are one line each, and the selected download expands in place with its path, size, elapsed time, live speed while it is active, and the error reason when it failed. The prompt is hidden while the dashboard is open, so keystrokes drive the dashboard instead of the editor.
+`Ctrl+Shift+O` replaces the prompt editor with a focused dashboard. Every line hangs off a left rail, the way the prompt itself is framed, and the selected row is drawn in bold with an accent rail and accent name so the selection is unmistakable. Rows share one column template — glyph, name, percent, bar, detail — so a download without progress blanks those cells instead of shifting its text left. Rows are one line each, and the selected download expands in place with its path, size, transfer time (`Took` once finished, `Elapsed` while running), live speed while it is active, and the error reason when it failed. Transfer time counts only the stretches actually spent downloading: queue wait and paused time are excluded. The prompt is hidden while the dashboard is open, so keystrokes drive the dashboard instead of the editor.
 
 ```text
 ┃ Downloads · 1 active · 1 done · 1 failed
@@ -120,17 +120,18 @@ Notes:
 ┃      Path    ~/Download/Zap/ZAP_2.17.0_Linux.tar.gz
 ┃      URL     github.com/zaproxy/…/ZAP-x64.AppImage
 ┃      Size    411 MiB / 411 MiB
-┃      Elapsed 5m 0s
+┃      Took    5m 0s
 ┃      Handle  dl-brisk-marten-15
 ┃ ● ubuntu-24.04.iso                    24% ██░░░░░░  2.3 MiB/s · 114 MiB
 ┃
-┃ ↑↓ / j k move · ⏎ details · p pause/resume · R retry · d remove · esc close
+┃ ↑↓ / j k move · ⏎ details · o open · p pause/resume · R retry · d remove · esc close
 ```
 
 | Key                    | Action                                                                                 |
 | ---------------------- | -------------------------------------------------------------------------------------- |
 | `↑` / `↓`, `j` / `k`   | Select the previous/next download, wrapping at both ends                               |
 | `Enter`                | Expand or collapse the selected download's details                                     |
+| `o`                    | Open the selected file with the system's default program                               |
 | `p`                    | Pause or resume the selected download                                                  |
 | `R`                    | Retry the selected failed download                                                     |
 | `d`                    | Remove it (press twice; files stay on disk)                                            |

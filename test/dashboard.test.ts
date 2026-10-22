@@ -124,7 +124,6 @@ describe("prompt dashboard", () => {
 		expect(collapsed.some((line) => line.includes("│"))).toBe(false);
 		expect(collapsed.join("\n")).toContain("/downloads/one.iso");
 		expect(collapsed.join("\n")).toContain("Speed");
-		expect(collapsed.join("\n")).toContain("Elapsed");
 
 		dashboard.handleInput("\r");
 		expect(dashboard.render(110).map(strip).join("\n")).not.toContain("Path");
@@ -188,6 +187,41 @@ describe("prompt dashboard", () => {
 		const selected = dashboard.render(100).find((line) => line.startsWith(accentRail)) ?? "";
 		expect(strip(selected)).toContain("one.iso");
 		expect(selected).toContain(boldOpen);
+		dashboard.dispose();
+	});
+
+	test("reports transfer time rather than time since the download was queued", () => {
+		const started = Date.now() - 3_600_000; // queued an hour ago
+		const { dashboard } = harness([
+			job({ state: "complete", createdAt: started, activeMs: 15_000, finishedAt: started + 3_600_000 }),
+		]);
+		const text = dashboard.render(110).map(strip).join("\n");
+		expect(text).toContain("Took");
+		expect(text).toContain("15s");
+		expect(text).not.toContain("1h");
+		dashboard.dispose();
+	});
+
+	test("omits the duration when it was never measured", () => {
+		const { dashboard } = harness([job({ state: "complete" })]);
+		const text = dashboard.render(110).map(strip).join("\n");
+		expect(text).not.toContain("Took");
+		expect(text).not.toContain("Elapsed");
+		dashboard.dispose();
+	});
+
+	test("o reports that there is no file to open", () => {
+		const { dashboard } = harness([job({ state: "complete", filePath: "/nope/missing.bin" })]);
+		dashboard.handleInput("o");
+		expect(strip(dashboard.render(110).join("\n"))).toContain("nothing to open yet");
+		dashboard.dispose();
+	});
+
+	test("footer advertises open and vim movement", () => {
+		const { dashboard } = harness([job()]);
+		const footer = strip(dashboard.render(100).join("\n"));
+		expect(footer).toContain("j k move");
+		expect(footer).toContain("o open");
 		dashboard.dispose();
 	});
 

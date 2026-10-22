@@ -35,6 +35,10 @@ export interface Job {
 	filePath?: string;
 	/** Display name cached from the status file path or the URL. */
 	name?: string;
+	/** Wall-clock ms spent actually transferring, excluding queue and pause time. */
+	activeMs?: number;
+	/** When the current active stretch began. Undefined while not transferring. */
+	activeSince?: number;
 	finishedAt?: number;
 }
 
@@ -52,6 +56,7 @@ export interface PersistedJob {
 	completedLength?: number;
 	filePath?: string;
 	name?: string;
+	activeMs?: number;
 	errorCode?: number;
 	errorMessage?: string;
 }

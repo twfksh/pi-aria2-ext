@@ -250,6 +250,7 @@ export class DownloadManager {
 				connections: 0,
 				filePath: entry.filePath,
 				name: entry.name,
+				activeMs: entry.activeMs,
 				errorCode: entry.errorCode,
 				errorMessage: entry.errorMessage,
 			});
@@ -352,6 +353,10 @@ export class DownloadManager {
 			job.gid = undefined;
 			job.state = "paused";
 			job.speed = 0;
+			if (job.activeSince !== undefined) {
+				job.activeMs = (job.activeMs ?? 0) + (Date.now() - job.activeSince);
+				job.activeSince = undefined;
+			}
 		}
 		this.lastError = `aria2 exited (${signal ? `signal ${signal}` : `code ${code ?? "?"}`}); live downloads were paused and will resume from their partial files.`;
 		this.store.schedule([...this.jobs.values()]);
@@ -374,6 +379,7 @@ export class DownloadManager {
 				job.state = "complete";
 				job.completedLength = job.totalLength;
 				job.speed = 0;
+				job.activeSince = undefined;
 				job.finishedAt ??= Date.now();
 			} else {
 				batch.push(job);
@@ -562,6 +568,14 @@ export class DownloadManager {
 	private applyStatus(job: Job, status: Aria2Status): void {
 		const previous = job.state;
 		job.state = mapState(status.status);
+		// Track only the time actually spent transferring, so the dashboard can
+		// report how long the file took instead of how long it has been queued.
+		if (job.state === "active" && previous !== "active") {
+			job.activeSince = Date.now();
+		} else if (job.state !== "active" && previous === "active") {
+			if (job.activeSince !== undefined) job.activeMs = (job.activeMs ?? 0) + (Date.now() - job.activeSince);
+			job.activeSince = undefined;
+		}
 		job.completedLength = num(status.completedLength);
 		job.totalLength = num(status.totalLength);
 		job.speed = num(status.downloadSpeed);
@@ -740,6 +754,10 @@ export class DownloadManager {
 		job.speed = 0;
 		job.errorCode = undefined;
 		job.errorMessage = undefined;
+		// A retry or re-add starts a fresh measurement.
+		job.activeMs = undefined;
+		job.activeSince = undefined;
+		job.finishedAt = undefined;
 	}
 
 	/**

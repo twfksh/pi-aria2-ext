@@ -9,6 +9,8 @@ import {
 	type EditorTheme,
 	type TUI,
 } from "@earendil-works/pi-tui";
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { bytes, displayUrl, jobName, percent, progressBar, rate, stateGlyph, stateLabel } from "./format.ts";
 import type { DownloadManager } from "./manager.ts";
@@ -21,12 +23,30 @@ function pad(value: string, width: number, alignRight = false): string {
 	return alignRight ? `${fill}${text}` : `${text}${fill}`;
 }
 
-function elapsed(job: Job): string {
-	const seconds = Math.max(0, Math.floor(((job.finishedAt ?? Date.now()) - job.createdAt) / 1000));
+function clockText(ms: number): string {
+	const seconds = Math.max(0, Math.round(ms / 1000));
 	if (seconds < 60) return `${seconds}s`;
 	const minutes = Math.floor(seconds / 60);
 	if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
 	return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
+
+/**
+ * Time spent actually transferring the file, not time since it was queued.
+ * Undefined for downloads tracked before this was measured (restored history).
+ */
+function transferTime(job: Job): string | undefined {
+	const settled = job.activeMs ?? 0;
+	const running = job.activeSince !== undefined ? Date.now() - job.activeSince : 0;
+	if (settled === 0 && running === 0) return undefined;
+	return clockText(settled + running);
+}
+
+/** Path to hand to the desktop opener, or undefined when the file is not here yet. */
+function localFile(job: Job): string | undefined {
+	if (job.filePath) return job.filePath;
+	if (!job.options.out) return undefined;
+	return join(job.options.dir, job.options.out);
 }
 
 const RAIL = "┃";
@@ -67,6 +87,7 @@ export class DownloadsDashboard extends CustomEditor {
 	private readonly timer: ReturnType<typeof setInterval>;
 	private selectedHandle: string | undefined;
 	private pendingRemove: string | undefined;
+	private notice: string | undefined;
 	private detailsOpen = true;
 
 	constructor(
@@ -105,6 +126,7 @@ export class DownloadsDashboard extends CustomEditor {
 		const jobs = this.jobs();
 		const index = jobs.findIndex((job) => job.handle === this.selectedHandle);
 		const selected = jobs[index];
+		this.notice = undefined;
 		const up = matchesKey(data, "up") || data === "k";
 		const down = matchesKey(data, "down") || data === "j";
 		if (up && jobs.length) {
@@ -117,6 +139,8 @@ export class DownloadsDashboard extends CustomEditor {
 			void (selected.state === "paused" ? this.manager.resume(selected.handle) : this.manager.pause(selected.handle));
 		} else if (data === "R" && selected?.state === "error") {
 			void this.manager.retry(selected.handle);
+		} else if (data === "o" && selected) {
+			this.openSelected(selected);
 		} else if (data === "d" && selected) {
 			if (this.pendingRemove === selected.handle) {
 				this.pendingRemove = undefined;
@@ -133,6 +157,27 @@ export class DownloadsDashboard extends CustomEditor {
 		this.tui.requestRender();
 	}
 
+	/** Hand the finished file to the desktop's default program for its type. */
+	private openSelected(job: Job): void {
+		const path = localFile(job);
+		if (!path || !existsSync(path)) {
+			this.notice = "nothing to open yet — the file is not on disk";
+			return;
+		}
+		const [command, args] =
+			process.platform === "darwin"
+				? ["open", [path]]
+				: process.platform === "win32"
+					? ["cmd", ["/c", "start", "", path]]
+					: ["xdg-open", [path]];
+		try {
+			spawn(command, args, { detached: true, stdio: "ignore" }).unref();
+			this.notice = `opened ${jobName(job)}`;
+		} catch {
+			this.notice = `could not open ${jobName(job)}`;
+		}
+	}
+
 	/** Details for the selected download, shown directly beneath its row. */
 	private details(job: Job, width: number): string[] {
 		const room = Math.max(12, width - 4 - LABEL_WIDTH - 2);
@@ -141,9 +186,10 @@ export class DownloadsDashboard extends CustomEditor {
 			["Path", path, "muted"],
 			["URL", displayUrl(job.urls[0] ?? ""), "muted"],
 			["Size", job.totalLength > 0 ? `${bytes(job.completedLength)} / ${bytes(job.totalLength)}` : bytes(job.completedLength), "muted"],
-			["Elapsed", elapsed(job), "muted"],
 		];
 		if (job.state === "active") rows.splice(2, 0, ["Speed", rate(job.speed) || "starting", "accent"]);
+		const took = transferTime(job);
+		if (took) rows.push([job.state === "complete" ? "Took" : "Elapsed", took, "muted"]);
 		if (job.errorMessage) rows.push(["Reason", job.errorMessage, "error"]);
 		rows.push(["Handle", job.handle, "dim"]);
 		return rows.map(([label, value, tone]) => {
@@ -215,7 +261,10 @@ export class DownloadsDashboard extends CustomEditor {
 		if (this.pendingRemove) {
 			body.push({ text: this.uiTheme.fg("warning", ` Press d again to remove ${this.pendingRemove}; the file stays on disk.`), active: false });
 		}
-		body.push({ text: this.uiTheme.fg("dim", " ↑↓ / j k move · ⏎ details · p pause/resume · R retry · d remove · esc close"), active: false });
+		if (this.notice) {
+			body.push({ text: this.uiTheme.fg("muted", ` ${this.notice}`), active: false });
+		}
+		body.push({ text: this.uiTheme.fg("dim", " ↑↓ / j k move · ⏎ details · o open · p pause/resume · R retry · d remove · esc close"), active: false });
 
 		return body.map(({ text, active }) => {
 			const rail = active ? this.uiTheme.fg("accent", RAIL) : this.uiTheme.fg("border", RAIL);

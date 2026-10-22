@@ -71,6 +71,10 @@ function parsePersistedJob(value: unknown): PersistedJob | undefined {
 	}
 	const filePath = typeof value.filePath === "string" && value.filePath ? value.filePath : undefined;
 	const name = typeof value.name === "string" && value.name ? value.name : undefined;
+	const activeMs =
+		typeof value.activeMs === "number" && Number.isFinite(value.activeMs) && value.activeMs >= 0
+			? value.activeMs
+			: undefined;
 	const errorCode = typeof value.errorCode === "number" && Number.isFinite(value.errorCode) ? value.errorCode : undefined;
 	const errorMessage = typeof value.errorMessage === "string" && value.errorMessage ? value.errorMessage : undefined;
 	return {
@@ -86,6 +90,7 @@ function parsePersistedJob(value: unknown): PersistedJob | undefined {
 		completedLength,
 		filePath,
 		name,
+		activeMs,
 		errorCode,
 		errorMessage,
 	};
@@ -105,6 +110,7 @@ export function toPersisted(job: Job): PersistedJob {
 		completedLength: job.completedLength,
 		filePath: job.filePath,
 		name: job.name,
+		activeMs: job.activeMs,
 		errorCode: job.errorCode,
 		errorMessage: job.errorMessage,
 	};
