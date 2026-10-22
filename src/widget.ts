@@ -87,7 +87,7 @@ export function renderWidgetLines(data: WidgetData, theme: Theme, width: number)
 	if (snapshot.daemon === "error" && snapshot.lastError) {
 		lines.push(truncateToWidth(`  ${theme.fg("error", snapshot.lastError)}`, width));
 	} else if (live.length === 0) {
-		lines.push(truncateToWidth(`  ${theme.fg("dim", "open /downloads to manage the queue")}`, width));
+		lines.push(truncateToWidth(`  ${theme.fg("dim", "Ctrl+Shift+O opens the downloads dashboard")}`, width));
 	}
 	return lines;
 }

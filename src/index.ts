@@ -15,9 +15,9 @@ import {
 import { Key, Text } from "@earendil-works/pi-tui";
 import { Type, type Static } from "typebox";
 import { loadConfig } from "./config.ts";
-import { openDownloadsDashboard } from "./dashboard.ts";
 import { displayUrl, formatHandles } from "./format.ts";
 import { DownloadManager, errorMessage } from "./manager.ts";
+import { DownloadsDashboard } from "./dashboard.ts";
 import {
 	type DownloadDetails,
 	filterJobs,
@@ -64,6 +64,27 @@ const DownloadParams = Type.Object({
 type DownloadArgs = Static<typeof DownloadParams>;
 
 let manager: DownloadManager | undefined;
+let dashboardOpen = false;
+
+/** Restore the normal prompt editor. Safe to call repeatedly. */
+function closeDashboard(ctx: ExtensionContext): void {
+	if (!dashboardOpen) return;
+	dashboardOpen = false;
+	ctx.ui.setEditorComponent(undefined);
+}
+
+/** Replace the prompt editor with the split-pane downloads dashboard. */
+function toggleDashboard(mgr: DownloadManager, ctx: ExtensionContext): void {
+	if (dashboardOpen) {
+		closeDashboard(ctx);
+		return;
+	}
+	dashboardOpen = true;
+	ctx.ui.setEditorComponent(
+		(tui, editorTheme, keybindings) =>
+			new DownloadsDashboard(mgr, tui, editorTheme, keybindings, ctx.ui.theme, () => closeDashboard(ctx)),
+	);
+}
 
 function stateDirectory(): string {
 	return process.env.PI_ARIA2_HOME?.trim() || join(getAgentDir(), "pi-aria2");
@@ -156,7 +177,7 @@ export default function registerDownloads(pi: ExtensionAPI): void {
 			"- wait: block until the selected downloads finish. Parameters: handle, timeoutSec (1-3600, default 300). Downloads keep running if the wait times out.",
 			"- stats: daemon and queue summary.",
 			"",
-			"Downloads never overwrite an existing file and resume from partial files. A live progress widget appears while transfers run; the user can open /downloads for the interactive manager.",
+			"Downloads never overwrite an existing file and resume from partial files. A live progress widget appears while transfers run; the user can press Ctrl+Shift+O for the interactive dashboard.",
 		].join("\n"),
 		promptSnippet: "Download files quickly and resumably via aria2, with a managed queue",
 		promptGuidelines: [
@@ -327,17 +348,6 @@ export default function registerDownloads(pi: ExtensionAPI): void {
 		},
 	});
 
-	pi.registerCommand("downloads", {
-		description: "Open the interactive downloads dashboard",
-		handler: async (_args, ctx) => {
-			const mgr = getManager(ctx);
-			try {
-				await openDownloadsDashboard(mgr, ctx);
-			} catch (error) {
-				ctx.ui.notify(errorMessage(error), "error");
-			}
-		},
-	});
 
 	pi.registerCommand("download", {
 		description: "Add a download: /download <url> [dir]",
@@ -369,15 +379,8 @@ export default function registerDownloads(pi: ExtensionAPI): void {
 	});
 
 	pi.registerShortcut(Key.ctrlShift("o"), {
-		description: "Open the downloads dashboard",
-		handler: async (ctx) => {
-			const mgr = getManager(ctx);
-			try {
-				await openDownloadsDashboard(mgr, ctx);
-			} catch (error) {
-				ctx.ui.notify(errorMessage(error), "error");
-			}
-		},
+		description: "Toggle the downloads dashboard",
+		handler: (ctx) => toggleDashboard(getManager(ctx), ctx),
 	});
 
 	pi.on("session_start", async (_event, ctx) => {
@@ -390,6 +393,7 @@ export default function registerDownloads(pi: ExtensionAPI): void {
 	});
 
 	pi.on("session_shutdown", async () => {
+		dashboardOpen = false;
 		const mgr = manager;
 		manager = undefined;
 		if (mgr) await mgr.shutdown().catch(() => {});

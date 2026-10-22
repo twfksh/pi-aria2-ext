@@ -69,7 +69,7 @@ Or do it yourself:
 
 ```
 /download https://example.com/archive.iso ~/Downloads
-/downloads
+# Ctrl+Shift+O toggles the downloads dashboard
 ```
 
 The agent can also call the tool directly:
@@ -110,46 +110,41 @@ Notes:
 
 While transfers are live, a widget above the editor shows handle, status, percentage, a progress bar, size, speed, and ETA. It stays visible briefly after completion, then hides itself. The footer shows a compact `↓ 2 · 3.4 MiB/s` status.
 
-### `/downloads`
+### Downloads dashboard
 
-Opens a full-screen dashboard:
+`Ctrl+Shift+O` replaces the prompt editor with a focused dashboard. Rows are one line each, and the selected download expands in place with path, size, elapsed time, and — while it is active — live speed, plus the error reason when it failed. The prompt is hidden while the dashboard is open, so keystrokes drive the dashboard instead of the editor.
 
 ```
-┌─ Downloads ────────────────────────────────────────────────────┐
-│ 2 active · 1 paused · 3.4 MiB/s                                │
-│                                                                │
-│ ▸ ●  78% ██████████░░  dl-brisk-otter-42  ubuntu.iso   4.2 GiB │
-│   ‖  31% ██████░░░░░░  dl-quiet-heron-17  model.bin    1.1 GiB │
-│   ✓ 100% ████████████  dl-warm-lark-58    notes.pdf    2.1 MiB │
-│                                                                │
-│ ubuntu.iso                                                     │
-│ /home/me/Downloads/ubuntu-24.04.iso                            │
-│ https://releases.example.com/ubuntu-24.04.iso                  │
-│                                                                │
-│ ↑/↓ move  enter pause/resume  p pause  r resume  d remove      │
-│ c copy path  f filter  x clear done  a/A all  esc close        │
-└────────────────────────────────────────────────────────────────┘
+Downloads · 2 done · 1 failed
+
+    ✗ Zap-x86_64.AppImage                 failed · 0 B
+  ▸ ✓ ZAP_2.17.0_Linux.tar.gz             100% ████████  411 MiB
+      Path    ~/Download/Zap/ZAP_2.17.0_Linux.tar.gz
+      URL     github.com/zaproxy/…/ZAP-x64.AppImage
+      Size    411 MiB / 411 MiB
+      Elapsed 5m 0s
+      Handle  dl-brisk-marten-15
+
+  ↑↓ move · ⏎ details · p pause/resume · R retry · d remove · esc close
 ```
 
 | Key | Action |
 |---|---|
-| `↑` / `↓` | Move selection |
-| `Enter` / `Space` | Pause, resume, or retry the selected download |
-| `p` / `r` / `R` | Pause / resume / retry |
-| `d` | Remove (press twice; files stay on disk) |
-| `x` | Clear finished/failed entries (press twice; files stay) |
-| `c` | Copy the destination path to the clipboard |
-| `f` | Cycle filter: all → active → waiting → paused → done → failed |
-| `a` / `A` | Pause all / resume all |
-| `Esc` / `q` | Close |
+| `↑` / `↓` | Select the previous/next download, wrapping at both ends |
+| `Enter` | Expand or collapse the selected download's details |
+| `p` | Pause or resume the selected download |
+| `R` | Retry the selected failed download |
+| `d` | Remove it (press twice; files stay on disk) |
+| `Esc` / `Ctrl+Shift+O` | Close and restore the prompt |
+
+Movement is one row per physical key press: Kitty-protocol key-release events are ignored, so a press is never applied twice, and holding a key still repeats normally.
+
+Use the `download` tool for filtering or other queue operations.
+
 
 ### `/download`
 
 `/download <url> [dir]` adds a download without a model round trip. With no arguments it opens an input dialog.
-
-### Shortcut
-
-`Ctrl+Shift+O` opens the dashboard from anywhere in the editor.
 
 ## Safety model
 
@@ -241,7 +236,7 @@ The extension does not delete files. If a download fails with "file already exis
 
 ```bash
 bun install
-bun test          # 83 tests, including real aria2 integration tests
+bun test          # 88 tests, including real aria2 integration tests
 bun run typecheck
 pi -e ./src/index.ts
 ```
@@ -260,7 +255,7 @@ The test suite starts real `aria2c` processes and a local range-capable HTTP ser
 | `src/validate.ts` | URL, path, speed, and handle validation |
 | `src/present.ts` | Pure text formatting for tool results |
 | `src/widget.ts` | Live progress widget |
-| `src/dashboard.ts` | Interactive `/downloads` screen |
+| `src/dashboard.ts` | Focused dashboard that replaces the prompt editor |
 | `src/config.ts` | `config.json` plus environment overrides |
 
 ## License

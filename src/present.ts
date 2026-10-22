@@ -161,7 +161,7 @@ export function renderAdd(jobs: Job[], dir: string): string {
 	if (firstOk) {
 		lines.push("");
 		lines.push(
-			`Track progress with download({ action: "wait", handle: "${firstOk.handle}" }) or open /downloads.`,
+			`Track progress with download({ action: "wait", handle: "${firstOk.handle}" }) or press Ctrl+Shift+O for the dashboard.`,
 		);
 	}
 	return lines.join("\n");

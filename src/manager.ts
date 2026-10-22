@@ -1041,7 +1041,7 @@ export class DownloadManager {
 
 		try {
 			if (!this.widgetEnabled) {
-				if (live.length > 0) this.ui.setStatus(STATUS_KEY, `${live.length} saved · /downloads`);
+				if (live.length > 0) this.ui.setStatus(STATUS_KEY, `${live.length} saved · Ctrl+Shift+O`);
 				else this.ui.setStatus(STATUS_KEY, undefined);
 				return;
 			}

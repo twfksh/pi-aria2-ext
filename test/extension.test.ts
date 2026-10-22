@@ -61,7 +61,7 @@ describe("extension factory", () => {
 		expect(tools[0]?.name).toBe("download");
 		expect(tools[0]?.label).toBe("Download");
 		expect(tools[0]?.annotations?.destructiveHint).toBe(false);
-		expect(commands.has("downloads")).toBe(true);
+		expect(commands.has("downloads")).toBe(false);
 		expect(commands.has("download")).toBe(true);
 		expect(shortcuts.has("ctrl+shift+o")).toBe(true);
 		expect(handlers.get("session_start")).toHaveLength(1);
